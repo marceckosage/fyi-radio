@@ -41,12 +41,12 @@ button{width:100%;padding:15px 20px;border-radius:99px;border:0;background:var(-
 </form>
 <div class="g" id="ld" style="display:none"><span class="sp">Tuning in&hellip;</span></div>
 <script>
-const SALT="__SALT__", NONCE="__NONCE__", ITER=__ITER__;
+const ITER=__ITER__;
 const b2u=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 /* the payload downloads in the background while you type */
 const dlEl=document.getElementById('dl');
 const payload=(async()=>{
-  const res=await fetch('payload.bin');
+  const res=await fetch('payload.bin?v='+Date.now(),{cache:'no-store'});
   const total=+res.headers.get('content-length')||0;
   if(!res.body){ return new Uint8Array(await res.arrayBuffer()); }
   const reader=res.body.getReader(); const chunks=[]; let got=0;
@@ -58,13 +58,14 @@ const payload=(async()=>{
   for(const c of chunks){ buf.set(c,o); o+=c.length; }
   return buf;
 })();
-async function key(pw){
+async function key(pw,salt){
   const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey({name:'PBKDF2',salt:b2u(SALT),iterations:ITER,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:ITER,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
 }
 async function open_(pw){
-  const [k,data]=await Promise.all([key(pw),payload]);
-  const buf=await crypto.subtle.decrypt({name:'AES-GCM',iv:b2u(NONCE)},k,data);
+  const raw=await payload; /* salt(16)+nonce(12)+ciphertext — gate/payload can never skew */
+  const k=await key(pw,raw.slice(0,16));
+  const buf=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(16,28)},k,raw.slice(28));
   sessionStorage.setItem('arpw',pw);
   document.open(); document.write(new TextDecoder().decode(buf)); document.close();
 }
@@ -86,9 +87,8 @@ def encrypt_file(pw, path):
     salt=secrets.token_bytes(16); nonce=secrets.token_bytes(12)
     ct=AESGCM(derive(pw,salt)).encrypt(nonce, raw, None)
     d=os.path.dirname(path) or '.'
-    open(os.path.join(d,'payload.bin'),'wb').write(ct)
-    out=(WRAP.replace('__SALT__',base64.b64encode(salt).decode())
-             .replace('__NONCE__',base64.b64encode(nonce).decode())
+    open(os.path.join(d,'payload.bin'),'wb').write(salt+nonce+ct)
+    out=(WRAP
              .replace('__ITER__',str(ITER)))
     open(path,'w').write(out)
     print('gate: %s (%.0fKB) + payload.bin (%.1fMB)'%(path,len(out)/1e3,len(ct)/1e6))
