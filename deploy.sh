@@ -1,5 +1,5 @@
 #!/bin/zsh
-# FYI Radio (V2) — push the freshest build to GitHub Pages
+# ChatRadio (formerly FYI Radio, V2) — push the freshest build to GitHub Pages
 set -e
 SRC="${1:-/Users/marcecko/fyi-radio}"
 cd "$(dirname "$0")"

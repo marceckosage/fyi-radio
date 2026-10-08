@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Encrypt an HTML page for the Agent Radio share site.
+"""Encrypt an HTML page for the ChatRadio share site.
 AES-256-GCM, key from PBKDF2-HMAC-SHA256 (310k iters).
 Writes a TINY gate page (renders instantly) + payload.bin (raw ciphertext,
 fetched in the background with progress while the user types the password).
@@ -16,7 +16,7 @@ def derive(pw, salt):
 
 WRAP = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>Agent Radio</title>
+<meta name="robots" content="noindex"><title>ChatRadio</title>
 <style>
 :root{--ink:#111110;--bone:#F5F4F0;--muted:rgba(245,244,240,.55);--accent:#E8420F;--live:#30D158}
 *{margin:0;padding:0;box-sizing:border-box}html,body{height:100%}
@@ -33,7 +33,7 @@ button{width:100%;padding:15px 20px;border-radius:99px;border:0;background:var(-
 .shake{animation:sh .4s ease}@keyframes sh{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 </style></head><body>
 <form class="g" id="g" autocomplete="off">
-  <span class="lk">Agent Radio &middot; Private preview</span>
+  <span class="lk">ChatRadio &middot; Private preview</span>
   <input id="pw" type="password" placeholder="Password" autofocus aria-label="Password">
   <button type="submit">Unlock</button>
   <span class="err" id="err"></span>
